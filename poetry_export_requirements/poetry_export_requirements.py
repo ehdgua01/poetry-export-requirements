@@ -11,24 +11,6 @@ PASS = 0
 FAIL = 1
 
 
-def generate_requirements(
-        dev: bool = False, extras: str = "", without_hashes: bool = False,
-        with_credentials: bool = False,
-) -> bytes:
-    cmd = [
-        "poetry", "export", "-f", REQUIREMENTS_TXT,
-    ]
-    if dev:
-        cmd.append("--dev")
-    if extras:
-        cmd.extend(["--extras", extras])
-    if without_hashes:
-        cmd.append("--without-hashes")
-    if with_credentials:
-        cmd.append("--with-credentials")
-    return subprocess.run(cmd).stdout.strip()
-
-
 def check_diff(new: bytes, old: bytes) -> bool:
     return (
         True if difflib.SequenceMatcher(a=old, b=new).quick_ratio() < 1 else False
@@ -42,7 +24,28 @@ def poetry_export_requirements(
     if not output:
         output = REQUIREMENTS_TXT if not dev else DEV_REQUIREMENTS_TXT
 
-    new_requirements = generate_requirements(dev, extras, without_hashes, with_credentials)
+    cmd = ["poetry", "export", "-f", REQUIREMENTS_TXT]
+    if dev:
+        cmd.append("--dev")
+
+    if extras:
+        cmd.extend(["--extras", extras])
+
+    if without_hashes:
+        cmd.append("--without-hashes")
+
+    if with_credentials:
+        cmd.append("--with-credentials")
+
+    try:
+        new_requirements = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ).stdout.strip()
+    except subprocess.CalledProcessError as e:
+        print(e)
+        return FAIL
 
     try:
         old_requirements_txt = open(output, "rb+")
@@ -68,27 +71,33 @@ def poetry_export_requirements(
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--output", "-o", nargs=1, required=False, default=None,
+        "--output", "-o", nargs="?", const=REQUIREMENTS_TXT, default=None,
         help="The name of the output file.",
     )
     parser.add_argument(
-        "--dev", "-D", nargs=1, type=strtobool, required=False, default=False,
+        "--dev", "-D", nargs="?", type=strtobool, const=True, default=False,
         help="Include development dependencies.",
     )
     parser.add_argument(
-        "--extras", "-E", nargs="*", required=False, default=None,
+        "--extras", "-E", nargs="?", default=None,
         help="Extra sets of dependencies to include.",
     )
     parser.add_argument(
-        "--without-hashes", nargs=1, type=strtobool, required=False, default=False,
+        "--without-hashes", nargs="?", type=strtobool, const=True, default=False,
         help="Exclude hashes from the exported file.",
     )
     parser.add_argument(
-        "--with-credentials", nargs=1, type=strtobool, required=False, default=False,
+        "--with-credentials", nargs="?", type=strtobool, const=True, default=False,
         help="Include credentials for extra indices.",
     )
     args = parser.parse_args(argv)
-    return poetry_export_requirements(args.output, args.dev)
+    return poetry_export_requirements(
+        output=args.output,
+        dev=args.dev,
+        extras=args.extras,
+        without_hashes=args.without_hashes,
+        with_credentials=args.with_credentials,
+    )
 
 
 if __name__ == "__main__":
