@@ -2,7 +2,6 @@
   name: poetry-export-requirements
   entry: poetry-export-requirements
   language: python
-  types: [python]
   files: "pyproject.toml"
   pass_filenames: false
 
@@ -10,6 +9,5 @@
   name: poetry-export-dev-requirements
   entry: poetry-export-requirements --dev
   language: python
-  types: [python]
   files: "pyproject.toml"
   pass_filenames: false
