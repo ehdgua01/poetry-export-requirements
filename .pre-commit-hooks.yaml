@@ -1,0 +1,15 @@
+- id: export-requirements
+  name: Generate requirements.txt using Poetry
+  entry: poetry-export-requirements
+  language: python
+  types: [python]
+  files: "pyproject.toml"
+  pass_filenames: false
+
+- id: export-requirements-dev
+  name: Generate dev-requirements.txt using Poetry
+  entry: poetry-export-requirements --dev
+  language: python
+  types: [python]
+  files: "pyproject.toml"
+  pass_filenames: false
