@@ -1,8 +1,7 @@
 import argparse
 import difflib
 import subprocess
-from distutils.util import strtobool
-from typing import Optional, Sequence
+from typing import Tuple
 
 REQUIREMENTS_TXT = "requirements.txt"
 DEV_REQUIREMENTS_TXT = "requirements-dev.txt"
@@ -11,7 +10,7 @@ PASS = 0
 FAIL = 1
 
 
-def check_diff(new: bytes, old: bytes) -> bool:
+def is_diff(new: bytes, old: bytes) -> bool:
     return (
         True if difflib.SequenceMatcher(a=old, b=new).quick_ratio() < 1 else False
     )
@@ -20,7 +19,10 @@ def check_diff(new: bytes, old: bytes) -> bool:
 def poetry_export_requirements(
         output: str = None, dev: bool = False, extras: str = "",
         without_hashes: bool = False, with_credentials: bool = False,
-) -> int:
+) -> Tuple[int, bool]:
+    """
+    :return: Return code, Created requirements file
+    """
     cmd = ["poetry", "export", "-f", REQUIREMENTS_TXT]
     if dev:
         cmd.append("--dev")
@@ -40,9 +42,12 @@ def poetry_export_requirements(
             capture_output=True,
             check=True,
         ).stdout.strip()
+
+        if not len(new_requirements):
+            return PASS, False
     except subprocess.CalledProcessError as e:
         print(f"ERROR[{e.returncode}]: {e.stderr or e.stdout}")
-        return FAIL
+        return FAIL, False
 
     try:
         old_requirements_txt = open(output, "rb+")
@@ -50,50 +55,54 @@ def poetry_export_requirements(
         with open(output, "wb") as f:
             f.write(new_requirements)
         print(RETURN_MSG)
-        return FAIL
+        return FAIL, True
 
     try:
-        if check_diff(new_requirements, old_requirements_txt.read().strip()):
+        if is_diff(new_requirements, old_requirements_txt.read().strip()):
             old_requirements_txt.seek(0)
             old_requirements_txt.write(new_requirements)
             old_requirements_txt.truncate()
             print(RETURN_MSG)
-            return FAIL
+            return FAIL, True
     finally:
         old_requirements_txt.close()
 
-    return PASS
+    return PASS, True
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("filenames", nargs="*", help="Filenames to check.")
+    parser.add_argument(
+        "--dev", "-D", action="store_true",
+        help="Include development dependencies.",
+    )
+    parser.add_argument(
+        "--without-hashes", action="store_true",
+        help="Exclude hashes from the exported file.",
+    )
+    parser.add_argument(
+        "--with-credentials", action="store_true",
+        help="Include credentials for extra indices.",
+    )
+    parser.add_argument(
+        "--without-output", action="store_true",
+        help="Allow commit without requirements output."
+    )
     parser.add_argument(
         "--output", "-o", nargs="?", const=REQUIREMENTS_TXT, default=None,
         help="The name of the output file.",
     )
     parser.add_argument(
-        "--dev", "-D", nargs="?", type=strtobool, const=True, default=False,
-        help="Include development dependencies.",
-    )
-    parser.add_argument(
         "--extras", "-E", nargs="?", default=None,
         help="Extra sets of dependencies to include.",
     )
-    parser.add_argument(
-        "--without-hashes", nargs="?", type=strtobool, const=True, default=False,
-        help="Exclude hashes from the exported file.",
-    )
-    parser.add_argument(
-        "--with-credentials", nargs="?", type=strtobool, const=True, default=False,
-        help="Include credentials for extra indices.",
-    )
-    args = parser.parse_args(argv)
+    args = parser.parse_args()
 
     if not args.output:
         args.output = REQUIREMENTS_TXT if not args.dev else DEV_REQUIREMENTS_TXT
 
-    ret = poetry_export_requirements(
+    ret, created = poetry_export_requirements(
         output=args.output,
         dev=args.dev,
         extras=args.extras,
@@ -101,7 +110,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         with_credentials=args.with_credentials,
     )
 
-    if (ret is PASS) and (args.output not in args.filenames):
+    if ret is FAIL:
+        return FAIL
+
+    if (
+            created
+            and args.output not in args.filenames
+            and args.without_output is False
+    ):
+        print(f"{args.output} not staged for commit")
         return FAIL
 
     return PASS
