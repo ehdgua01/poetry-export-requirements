@@ -2,12 +2,10 @@
   name: poetry-export-requirements
   entry: poetry-export-requirements
   language: python
-  files: "pyproject.toml"
-  pass_filenames: false
+  files: pyproject.toml
 
 - id: export-dev-requirements
   name: poetry-export-dev-requirements
   entry: poetry-export-requirements --dev
   language: python
-  files: "pyproject.toml"
-  pass_filenames: false
+  files: pyproject.toml

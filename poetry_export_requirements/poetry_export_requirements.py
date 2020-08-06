@@ -21,9 +21,6 @@ def poetry_export_requirements(
         output: str = None, dev: bool = False, extras: str = "",
         without_hashes: bool = False, with_credentials: bool = False,
 ) -> int:
-    if not output:
-        output = REQUIREMENTS_TXT if not dev else DEV_REQUIREMENTS_TXT
-
     cmd = ["poetry", "export", "-f", REQUIREMENTS_TXT]
     if dev:
         cmd.append("--dev")
@@ -70,6 +67,7 @@ def poetry_export_requirements(
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("filenames", nargs="*", help="Filenames to check.")
     parser.add_argument(
         "--output", "-o", nargs="?", const=REQUIREMENTS_TXT, default=None,
         help="The name of the output file.",
@@ -91,13 +89,22 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Include credentials for extra indices.",
     )
     args = parser.parse_args(argv)
-    return poetry_export_requirements(
+
+    if not args.output:
+        args.output = REQUIREMENTS_TXT if not args.dev else DEV_REQUIREMENTS_TXT
+
+    ret = poetry_export_requirements(
         output=args.output,
         dev=args.dev,
         extras=args.extras,
         without_hashes=args.without_hashes,
         with_credentials=args.with_credentials,
     )
+
+    if (ret is PASS) and (args.output not in args.filenames):
+        return FAIL
+
+    return PASS
 
 
 if __name__ == "__main__":
