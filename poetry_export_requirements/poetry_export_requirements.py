@@ -40,11 +40,11 @@ def poetry_export_requirements(
     try:
         new_requirements = subprocess.run(
             cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
+            check=True,
         ).stdout.strip()
     except subprocess.CalledProcessError as e:
-        print(e)
+        print(f"ERROR[{e.returncode}]: {e.stderr or e.stdout}")
         return FAIL
 
     try:
