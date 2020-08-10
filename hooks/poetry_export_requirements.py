@@ -133,7 +133,7 @@ def main() -> int:
         and args.output not in args.filenames
         and args.without_output is False
     ):
-        print(f"{args.output} not staged for commit")
+        print(f"{args.output} do not stage")
         return FAIL
 
     return PASS
