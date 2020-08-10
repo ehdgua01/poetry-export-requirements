@@ -7,7 +7,7 @@ pre-commit: https://github.com/pre-commit/pre-commit
 
 ## Prerequisite
 
-- python3.5 or later
+- python3.7 or later
 
 ## Features
 
