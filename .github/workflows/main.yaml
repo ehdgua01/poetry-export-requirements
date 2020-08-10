@@ -22,7 +22,7 @@ jobs:
         key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
     - name: Install pre-commit
-    - run: pip install pre-commit
+      run: pip install pre-commit
 
     - uses: pre-commit/action@v2.0.0
 
