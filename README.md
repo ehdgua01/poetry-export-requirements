@@ -1,13 +1,12 @@
 # poetry-export-requirements
 
-Use this pre-commit hook to ensure that the requirement output is stage for commit 
-when you use a Poetry to manage packages and add new dependencies.
+Use this pre-commit hook to ensure that the requirement output is stage for commit when you use a Poetry to manage packages and add new dependencies.
 
 pre-commit: https://github.com/pre-commit/pre-commit
 
 ## Prerequisite
 
-- python3.7 or later
+- python3.6 or later
 
 ## Features
 

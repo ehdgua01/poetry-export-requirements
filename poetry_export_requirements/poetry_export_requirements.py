@@ -10,18 +10,23 @@ PASS = 0
 FAIL = 1
 
 
-def is_diff(new: bytes, old: bytes) -> bool:
+def is_diff(new: str, old: str) -> bool:
     return (
-        True if difflib.SequenceMatcher(a=old, b=new).quick_ratio() < 1 else False
+        True
+        if difflib.SequenceMatcher(a=old, b=new).quick_ratio() < 1
+        else False
     )
 
 
 def poetry_export_requirements(
-        output: str = None, dev: bool = False, extras: str = "",
-        without_hashes: bool = False, with_credentials: bool = False,
+    output: str,
+    dev: bool = False,
+    extras: str = "",
+    without_hashes: bool = False,
+    with_credentials: bool = False,
 ) -> Tuple[int, bool]:
     """
-    :return: Return code, Created requirements file
+    :return: Return result code, flag of Created requirements file
     """
     cmd = ["poetry", "export", "-f", REQUIREMENTS_TXT]
     if dev:
@@ -38,9 +43,7 @@ def poetry_export_requirements(
 
     try:
         new_requirements = subprocess.run(
-            cmd,
-            capture_output=True,
-            check=True,
+            cmd, stdout=subprocess.PIPE, universal_newlines=True, check=True,
         ).stdout.strip()
 
         if not len(new_requirements):
@@ -50,9 +53,9 @@ def poetry_export_requirements(
         return FAIL, False
 
     try:
-        old_requirements_txt = open(output, "rb+")
+        old_requirements_txt = open(output, "r+")
     except OSError:
-        with open(output, "wb") as f:
+        with open(output, "w") as f:
             f.write(new_requirements)
         print(RETURN_MSG)
         return FAIL, True
@@ -74,27 +77,39 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("filenames", nargs="*", help="Filenames to check.")
     parser.add_argument(
-        "--dev", "-D", action="store_true",
+        "--dev",
+        "-D",
+        action="store_true",
         help="Include development dependencies.",
     )
     parser.add_argument(
-        "--without-hashes", action="store_true",
+        "--without-hashes",
+        action="store_true",
         help="Exclude hashes from the exported file.",
     )
     parser.add_argument(
-        "--with-credentials", action="store_true",
+        "--with-credentials",
+        action="store_true",
         help="Include credentials for extra indices.",
     )
     parser.add_argument(
-        "--without-output", action="store_true",
-        help="Allow commit without requirements output."
+        "--without-output",
+        action="store_true",
+        help="Allow commit without requirements output.",
     )
     parser.add_argument(
-        "--output", "-o", nargs="?", const=REQUIREMENTS_TXT, default=None,
+        "--output",
+        "-o",
+        nargs="?",
+        const=REQUIREMENTS_TXT,
+        default=None,
         help="The name of the output file.",
     )
     parser.add_argument(
-        "--extras", "-E", nargs="?", default=None,
+        "--extras",
+        "-E",
+        nargs="?",
+        default=None,
         help="Extra sets of dependencies to include.",
     )
     args = parser.parse_args()
@@ -114,9 +129,9 @@ def main() -> int:
         return FAIL
 
     if (
-            created
-            and args.output not in args.filenames
-            and args.without_output is False
+        created
+        and args.output not in args.filenames
+        and args.without_output is False
     ):
         print(f"{args.output} not staged for commit")
         return FAIL
