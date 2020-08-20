@@ -1,3 +1,6 @@
 from setuptools import setup
 
-setup()
+from hooks import __version__
+
+
+setup(version=__version__)
