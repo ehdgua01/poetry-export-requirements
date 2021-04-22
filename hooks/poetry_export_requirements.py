@@ -11,11 +11,7 @@ FAIL = 1
 
 
 def is_diff(new: str, old: str) -> bool:
-    return (
-        True
-        if difflib.SequenceMatcher(a=old, b=new).quick_ratio() < 1
-        else False
-    )
+    return difflib.SequenceMatcher(a=old, b=new).quick_ratio() < 1
 
 
 def poetry_export_requirements(
